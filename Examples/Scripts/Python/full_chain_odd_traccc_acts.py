@@ -396,7 +396,7 @@ def main():
             absEta=(None, 3.0),
             loc0=(-4.0 * u.mm, 4.0 * u.mm),
             nMeasurementsMin=7,
-            maxHoles=2,
+            maxHoles=4,
             maxOutliers=2,
         ),
         CkfConfig(
@@ -407,8 +407,8 @@ def main():
             stayOnSeed=True,
             pixelVolumes=[16, 17, 18],
             stripVolumes=[23, 24, 25],
-            maxPixelHoles=1,
-            maxStripHoles=2,
+            # maxPixelHoles=1,
+            # maxStripHoles=2,
             constrainToVolumes=[
                 2,  # beam pipe
                 32,
