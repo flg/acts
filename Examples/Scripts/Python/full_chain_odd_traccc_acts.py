@@ -37,6 +37,21 @@ from acts.examples.simulation import (
     addDigitization,
     addDigiParticleSelection,
 )
+from acts.examples.reconstruction import (
+    SeedingAlgorithmConfigArg,
+    SeedFinderConfigArg,
+    SeedFinderOptionsArg,
+    SeedFilterConfigArg,
+    SpacePointGridConfigArg,
+    addGridTripletSeeding,
+    CkfConfig,
+    addCKFTracks,
+    TrackSelectorConfig,
+    addAmbiguityResolution,
+    AmbiguityResolutionConfig,
+    addVertexFitting,
+    VertexFinder,
+)
 
 u = acts.UnitConstants
 
@@ -336,6 +351,104 @@ def main():
             )
         )
 
+    # ──────────────────────────────────────────────────────────────────
+    # ── ACTS reconstuction ────────────────────────────────────────────
+    # ──────────────────────────────────────────────────────────────────
+
+    # ── ACTS Seeding ────────────────────────────────────────────
+    seeds = addGridTripletSeeding(
+        s,
+        spAlg.config.outputSpacePoints,
+        SeedingAlgorithmConfigArg(),
+        SeedFinderConfigArg(),
+        SeedFinderOptionsArg(),
+        SeedFilterConfigArg(),
+        SpacePointGridConfigArg(),
+    )
+    parEstimateAlg = acts.examples.TrackParamsEstimationAlgorithm(
+        level=logLevel,
+        inputSeeds=seeds,
+        outputTrackParameters="estimatedparameters",
+        outputSeeds="estimatedseeds",
+        trackingGeometry=trackingGeometry,
+        magneticField=field,
+        initialSigmas=[
+            1 * u.mm,
+            1 * u.mm,
+            1 * u.degree,
+            1 * u.degree,
+            0 * u.e / u.GeV,
+            1 * u.ns,
+        ],
+        initialSigmaQoverPt=0.1 * u.e / u.GeV,
+        initialSigmaPtRel=0.1,
+        initialVarInflation=[1.0] * 6,
+        particleHypothesis=acts.ParticleHypothesis.muon,
+    )
+    s.addAlgorithm(parEstimateAlg)
+
+    addCKFTracks(
+        s,
+        trackingGeometry,
+        field,
+        TrackSelectorConfig(
+            pt=(1.0 * u.GeV if args.ttbar else 0.0, None),
+            absEta=(None, 3.0),
+            loc0=(-4.0 * u.mm, 4.0 * u.mm),
+            nMeasurementsMin=7,
+            maxHoles=2,
+            maxOutliers=2,
+        ),
+        CkfConfig(
+            chi2CutOffMeasurement=15.0,
+            chi2CutOffOutlier=25.0,
+            numMeasurementsCutOff=2,
+            seedDeduplication=True,
+            stayOnSeed=True,
+            pixelVolumes=[16, 17, 18],
+            stripVolumes=[23, 24, 25],
+            maxPixelHoles=1,
+            maxStripHoles=2,
+            constrainToVolumes=[
+                2,  # beam pipe
+                32,
+                4,  # beam pip gap
+                16,
+                17,
+                18,  # pixel
+                20,  # PST
+                23,
+                24,
+                25,  # short strip
+                26,
+                8,  # long strip gap
+                28,
+                29,
+                30,  # long strip
+            ],
+        ),
+        outputDirRoot=args.output if args.output_root else None,
+        outputDirCsv=args.output if args.output_csv else None,
+        writeCovMat=True,
+    )
+    addAmbiguityResolution(
+        s,
+        AmbiguityResolutionConfig(
+            maximumSharedHits=3, maximumIterations=1000000, nMeasurementsMin=7
+        ),
+        outputDirRoot=args.output if args.output_root else None,
+        outputDirCsv=args.output if args.output_csv else None,
+        writeCovMat=True,
+    )
+    addVertexFitting(
+        s,
+        field,
+        vertexFinder=VertexFinder.AMVF,
+        outputDirRoot=args.output if args.output_root else None,
+        outputDirCsv=args.output if args.output_csv else None,
+    )
+
+    # ── Run ────────────────────────────────────────────
     s.run()
 
 

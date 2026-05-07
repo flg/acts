@@ -34,6 +34,7 @@ static traccc::finding_config makeFindingCfg() {
     // cfg.min_p  *= traccc::unit<float>::GeV;
     // cfg.min_pT *= traccc::unit<float>::GeV;
     cfg.propagation = detray::propagation::config{};
+    cfg.max_num_skipping_per_cand = 1;
     return cfg;
 }
 
