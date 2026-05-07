@@ -101,15 +101,6 @@ ProcessCode TrackTruthMatcher::execute(const AlgorithmContext& ctx) const {
             particleTruthHitCount.at(majorityParticleId) >=
         m_cfg.matchingRatio;
 
-    std::cout << "XXXXtrack"
-      << " " << track.index()
-      << " " << majorityParticleId
-      << " " << nMajorityHits
-      << " " << track.nMeasurements()
-      << " " << particleTruthHitCount.at(majorityParticleId)
-      << " " << m_cfg.matchingRatio
-      << "\n";
-
     if ((!m_cfg.doubleMatching && recoMatched) ||
         (m_cfg.doubleMatching && recoMatched && truthMatched)) {
       auto& trackParticleMatch = trackParticleMatching[track.index()] = {
@@ -120,7 +111,6 @@ ProcessCode TrackTruthMatcher::execute(const AlgorithmContext& ctx) const {
       if (!particleTrackMatch.track) {
         particleTrackMatch.track = track.index();
       } else {
-        std::cout << "duplicate" << std::endl;
         // we already have a track associated with this particle and have to
         // resolve the ambiguity.
         // we will use the track with more hits and smaller chi2
@@ -139,7 +129,6 @@ ProcessCode TrackTruthMatcher::execute(const AlgorithmContext& ctx) const {
         ++particleTrackMatch.duplicates;
       }
     } else {
-      std::cout << "fake" << std::endl;
       trackParticleMatching[track.index()] = {TrackMatchClassification::Fake,
                                               std::nullopt, particleHitCounts};
 

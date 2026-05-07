@@ -112,6 +112,10 @@ std::size_t convertTracks(
     auto actsTrack = outputTracks.makeTrack();
     actsTrack.chi2() = track.chi2();
     actsTrack.nDoF() = static_cast<unsigned int>(ndf);
+    actsTrack.nMeasurements() = static_cast<std::uint32_t>(
+        track.constituent_links().size());
+    actsTrack.nHoles() = 0;
+    actsTrack.nOutliers() = 0;
 
     bool firstState = true;
     bool trackOk    = true;
@@ -120,7 +124,7 @@ std::size_t convertTracks(
       assert(linkType == traccc::edm::track_constituent_link::track_state);
 
       const auto& state = states.at(stateIdx);
-      const auto meas = measurements[state.measurement_index()];
+      const auto& meas = measurements[state.measurement_index()];
 
 
       auto optParams =
