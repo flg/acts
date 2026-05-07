@@ -14,8 +14,6 @@ PLOT_NAMES = [
     "trackeff_vs_pT",
     "fakeRatio_vs_eta",
     "fakeRatio_vs_pT",
-    "duplicationRatio_vs_eta",
-    "duplicationRatio_vs_pT",
 ]
 
 
