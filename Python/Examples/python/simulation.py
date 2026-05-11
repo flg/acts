@@ -604,15 +604,15 @@ def addSimWriters(
         outputDirRoot = Path(outputDirRoot)
         if not outputDirRoot.exists():
             outputDirRoot.mkdir()
-        s.addWriter(
-            RootParticleWriter(
-                level=customLogLevel(),
-                inputParticles=particlesSimulated,
-                bField=field,
-                writeHelixParameters=writeHelixParameters,
-                filePath=str(outputDirRoot / "particles_simulation.root"),
-            )
-        )
+        # s.addWriter(
+        #     RootParticleWriter(
+        #         level=customLogLevel(),
+        #         inputParticles=particlesSimulated,
+        #         bField=field,
+        #         writeHelixParameters=writeHelixParameters,
+        #         filePath=str(outputDirRoot / "particles_simulation.root"),
+        #     )
+        # )
         s.addWriter(
             RootSimHitWriter(
                 level=customLogLevel(),
