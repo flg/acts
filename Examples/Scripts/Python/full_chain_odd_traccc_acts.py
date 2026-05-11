@@ -93,6 +93,12 @@ def main():
     parser.add_argument("--ttbar", action="store_true")
     parser.add_argument("--ttbar-pu", type=int, default=200)
     parser.add_argument("--geant4", action="store_true")
+    parser.add_argument(
+        "--random-seed",
+        help="Seed to initialize the random number generator",
+        default=42,
+        type=int,
+    )
     args = parser.parse_args()
 
     args.output.mkdir(parents=True, exist_ok=True)
@@ -110,7 +116,7 @@ def main():
                                            materialDecorator=oddMaterialDeco)
     trackingGeometry = detector.trackingGeometry()
     field = acts.ConstantBField(acts.Vector3(0.0, 0.0, 2.0 * u.T))
-    rnd   = acts.examples.RandomNumbers(seed=42)
+    rnd   = acts.examples.RandomNumbers(seed=args.random_seed)
 
     # # ── Detray JSON directory ─────────────────────────────────────────────────
     # detrayJsonDir = args.detray_json_dir or (args.output / "detray_json")
