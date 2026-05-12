@@ -323,12 +323,12 @@ def main():
 
     # ── Step 7: Truth matching ────────────────────────────────────────────────
     matcherCfg = acts.examples.TrackTruthMatcher.Config()
-    matcherCfg.inputTracks                  = "traccc-acts-tracks"
-    matcherCfg.inputParticles               = "particles_selected"
+    matcherCfg.inputTracks                  = trkCfg.outputActsTracks
+    matcherCfg.inputParticles               = "particles"
     matcherCfg.inputMeasurementParticlesMap = "measurement_particles_map"
     matcherCfg.outputTrackParticleMatching  = "traccc_track_particle_matching"
     matcherCfg.outputParticleTrackMatching  = "traccc_particle_track_matching"
-    matcherCfg.doubleMatching               = False
+    matcherCfg.doubleMatching               = True
     matcherCfg.matchingRatio                = 0.5
     s.addAlgorithm(acts.examples.TrackTruthMatcher(matcherCfg, logLevel))
 
