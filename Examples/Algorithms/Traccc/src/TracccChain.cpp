@@ -7,6 +7,7 @@
 // file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 #include "ActsExamples/Traccc/TracccChain.hpp"
+#include <chrono>
 
 template <typename scalar_t>
 using unit = detray::unit<scalar_t>;
@@ -330,6 +331,7 @@ EventResult processEvent(
     result.n_measurements = meas_host.size();
 
     // Copy to device
+    auto const ts_copytodevice = std::chrono::high_resolution_clock::now();
     traccc::edm::spacepoint_collection::buffer sp_buf(
         static_cast<unsigned int>(sp_host.size()), chain->mr.main);
     chain->copy.setup(sp_buf)->wait();
@@ -339,6 +341,7 @@ EventResult processEvent(
         static_cast<unsigned int>(meas_host.size()), chain->mr.main);
     chain->copy.setup(meas_buf)->wait();
     chain->copy(vecmem::get_data(meas_host), meas_buf)->wait();
+    auto const te_copytodevice = std::chrono::high_resolution_clock::now();
 
     std::cout << "TracccAlg: converted " << sp_host.size()
             << " SPs from " << meas_host.size() << " measurements." << std::endl;
@@ -350,26 +353,33 @@ EventResult processEvent(
     // }
 
     // Seeding
+    auto const ts_seeding = std::chrono::high_resolution_clock::now();
     traccc::edm::seed_collection::buffer seeds_buf = chain->sa_cuda(sp_buf);
     chain->stream.synchronize();
+    auto const te_seeding = std::chrono::high_resolution_clock::now();
 
     traccc::edm::seed_collection::host seeds_host{chain->host_mr};
     chain->copy(seeds_buf, seeds_host)->wait();
     result.n_seeds = seeds_host.size();
 
     // Track parameter estimation
+    auto const ts_trackparams = std::chrono::high_resolution_clock::now();
     traccc::bound_track_parameters_collection_types::buffer params_buf =
         chain->tp_cuda(chain->device_field, meas_buf, sp_buf, seeds_buf);
     chain->stream.synchronize();
+    auto const te_trackparams = std::chrono::high_resolution_clock::now();
 
     // Track finding
+    auto const ts_finding = std::chrono::high_resolution_clock::now();
     traccc::edm::track_container<traccc::default_algebra>::buffer
         track_candidates_buf = chain->finding_cuda(
             chain->device_detector, chain->device_field, meas_buf, params_buf);
+    auto const te_finding = std::chrono::high_resolution_clock::now();
     result.n_found_tracks = chain->host_copy.get_size(
         track_candidates_buf.tracks);
 
     // Store results
+    auto const ts_copytohost = std::chrono::high_resolution_clock::now();
     result.measurements.emplace(chain->host_mr);
     const auto measurements_host_tmp =
         chain->copy.to(meas_buf, chain->host_mr, nullptr,
@@ -385,6 +395,7 @@ EventResult processEvent(
                         vecmem::copy::type::device_to_host);
     final_tracks.measurements =
         vecmem::get_data(result.measurements.value());
+    auto const te_copytohost = std::chrono::high_resolution_clock::now();
 
     std::cerr << "Finding: " << chain->host_copy.get_size(final_tracks.tracks)
               << " track candidates from " << seeds_host.size() << " seeds\n";
@@ -392,7 +403,34 @@ EventResult processEvent(
     result.n_fitted_tracks = chain->host_copy.get_size(final_tracks.tracks);
     result.tracks.emplace(std::move(final_tracks));
     result.detrayToActsMap = chain->detrayToActsMap;
+
+    if (chain->n_events > 0) {
+        chain->m_durations["copytodevice"] += (te_copytodevice - ts_copytodevice);
+        chain->m_durations["seeding"] += (te_seeding - ts_seeding);
+        chain->m_durations["trackparams"] += (te_trackparams - ts_trackparams);
+        chain->m_durations["finding"] += (te_finding - ts_finding);
+        chain->m_durations["copytohost"] += (te_copytohost - ts_copytohost);
+    }
+    chain->n_events += 1;
+
     return result;
+}
+
+TracccChain::~TracccChain() {
+    // We did not add the duration for the first event:
+    n_events -= 1;
+    std::cout << "TracccChain timing (average ms per event):"
+        << "\n  copytodevice: " << std::chrono::duration<float, std::milli>(
+            m_durations["copytodevice"]).count() / n_events
+        << "\n  seeding     : " << std::chrono::duration<float, std::milli>(
+            m_durations["seeding"]).count() / n_events
+        << "\n  trackparams : " << std::chrono::duration<float, std::milli>(
+            m_durations["trackparams"]).count() / n_events
+        << "\n  finding     : " << std::chrono::duration<float, std::milli>(
+            m_durations["finding"]).count() / n_events
+        << "\n  copytohost  : " << std::chrono::duration<float, std::milli>(
+            m_durations["copytohost"]).count() / n_events
+        << std::endl;
 }
 
 }  // namespace ActsExamples

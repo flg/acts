@@ -8,8 +8,11 @@
 
 #pragma once
 
+#include <cstddef>
 #include <memory>
 #include <string>
+#include <string>
+#include <chrono>
 
 #include <vecmem/memory/cuda/device_memory_resource.hpp>
 #include <vecmem/memory/cuda/managed_memory_resource.hpp>
@@ -105,7 +108,10 @@ struct TracccChain {
               const std::string& conditions_file,
               const std::string& material_file, const std::string& grid_file,
               const std::string& bfield_file);
+  ~TracccChain();
 
+  std::map<std::string, std::chrono::high_resolution_clock::duration> m_durations;
+  size_t n_events{0};
 };
 
 /// Per-event output counters.
